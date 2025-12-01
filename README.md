@@ -3,8 +3,15 @@
 基于 RAG (Retrieval-Augmented Generation) 技术的智能课程助教系统，支持多种文档格式的知识检索与问答。
 - [作业文档](https://gpy5q03kes.feishu.cn/wiki/JgqTwaqG2ih6hdkWk6pcYBhAnPd)
 - [项目地址（带 benchmark）](https://github.com/HEHUA2005/SJTU-NLP-project2-benchmark/tree/main)
-- [QA 数据集](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-qa-dataset)
-- [PDF 数据](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-pdf-data)
+
+## TODO
+- 修改完善原有代码，包括：
+    - 定义助教的角色人设与回答规范
+    - ……
+- 完成附加功能，具体参考[作业文档](https://gpy5q03kes.feishu.cn/wiki/JgqTwaqG2ih6hdkWk6pcYBhAnPd)
+- Benchmark 评测
+- 制作报告 ppt
+- 重写 `README.md`，包含对提交文件的必要解释
 
 ## 项目结构
 
@@ -31,7 +38,11 @@ pip install -r requirements.txt
 ```
 
 ## 数据下载
-由于网络问题，建议从 Hugging Face **手动下载**，下载成功后的数据格式如下所示：
+由于网络原因，建议从 Hugging Face **手动下载**：
+- [QA 数据集](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-qa-dataset)
+- [PDF 数据](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-pdf-data)
+
+下载成功后的数据格式如下所示：
 ```
 QA_data/
 ├── README.md
@@ -70,7 +81,7 @@ python download_data.py --download pdf
 ```
 export HF_ENDPOINT=https://hf-mirror.com
 ```
-> 由于QA 数据集是 parquet 格式，我修改了`benchmark_pipline/run_benchmark.py` 中读取 QA 数据集的部分
+> 由于 QA 数据集是 parquet 格式，我修改了`benchmark_pipline/run_benchmark.py` 中读取 QA 数据集的部分
 
 ## 配置说明
 `config.py` 参数配置为：
@@ -102,14 +113,6 @@ OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
 - `system_prompt`: 定义课程助教角色与回答规范
 - `retrieve_context`: 检索相关上下文并格式化来源信息
 - `generate_response`: 构建提示词并调用 LLM 生成回答
-
-## TODO
-- 修改完善原有代码，包括：
-    - 定义助教的角色人设与回答规范
-    - ……
-- 完成附加功能，具体参考[作业文档](https://gpy5q03kes.feishu.cn/wiki/JgqTwaqG2ih6hdkWk6pcYBhAnPd)
-- 制作报告 ppt
-- 重写 `README.md`，包含对提交文件的必要解释
 
 ## 使用方法
 
