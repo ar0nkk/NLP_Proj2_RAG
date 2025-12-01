@@ -30,6 +30,5 @@ hf_benchmark_results/
 *.swp
 *.swo
 QA_data/*
-config.yaml
 vector_db/*
 evaluation_results/*

@@ -56,6 +56,7 @@ def test_single_split(repo_id: str, split_name: str, agent: RAGAgent, config: di
             "parquet",
             data_files=f"./QA_data/data/{split_name}-00000-of-00001.parquet"
         )["train"]
+        # 读取完毕
 
         # 2. 获取第一个问题
         first_question = dataset[0]
