@@ -46,10 +46,16 @@ def test_single_split(repo_id: str, split_name: str, agent: RAGAgent, config: di
     print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
 
     try:
-        # 1. 下载数据集
-        print(f"{Colors.YELLOW}[1/3] Downloading dataset...{Colors.RESET}")
-        dataset = load_dataset(repo_id, split=split_name)
-        print(f"{Colors.GREEN}✓ Downloaded {len(dataset)} questions{Colors.RESET}")
+        # # 1. 下载数据集
+        # print(f"{Colors.YELLOW}[1/3] Downloading dataset...{Colors.RESET}")
+        # dataset = load_dataset(repo_id, split=split_name)
+        # print(f"{Colors.GREEN}✓ Downloaded {len(dataset)} questions{Colors.RESET}")
+        
+        # 1. 直接读取本地文件
+        dataset = load_dataset(
+            "parquet",
+            data_files=f"./QA_data/data/{split_name}-00000-of-00001.parquet"
+        )["train"]
 
         # 2. 获取第一个问题
         first_question = dataset[0]

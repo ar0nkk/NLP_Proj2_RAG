@@ -1,504 +1,74 @@
-# RAG 系统 Benchmark 评测框架
+# NLP Project 2 - RAG 课程助教系统
 
-<div align="center">
+基于 RAG (Retrieval-Augmented Generation) 技术的智能课程助教系统，支持多种文档格式的知识检索与问答。
 
-**基于 LLM-Driven 的 RAG 系统自动化评测基准**
+## 项目结构
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![Hugging Face](https://img.shields.io/badge/🤗-Datasets-yellow.svg)](https://huggingface.co/HEHUA2005)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-</div>
-
----
-
-## 📖 项目简介
-
-本项目是上海交通大学《自然语言处理》课程大作业2的配套 **Benchmark 评测框架**，为 RAG（Retrieval-Augmented Generation）智能课程助教系统提供标准化的评测体系。
-
-### 核心特性
-
-- **🎯 LLM-Driven 数据生成**：基于 PDF 课程文档自动生成高质量 QA 数据集
-- **📊 多维度评分体系**：来源准确性（60%）+ 内容准确性（20%）+ 完整性（15%）+ 相关性（5%）
-- **🚀 自动化评测流程**：从数据下载到结果可视化的完整 Pipeline
-- **📈 丰富的可视化**：6 种图表类型全方位展示评测结果
-- **☁️ Hugging Face 集成**：数据集托管在 Hugging Face Hub，开箱即用
-- **⚡ 并行处理**：支持多线程并行评测，提升效率
-
-### 数据集介绍
-
-本 Benchmark 包含 5 门思政课程的 QA 数据集：
-
-| 课程名称 | Split 名称 | 问题数量 |
-|---------|-----------|---------|
-| 毛泽东思想概论 | `Mao_Zedong_Thought` | ~100 |
-| 马克思主义基本原理 | `Principles_of_Marxism` | ~100 |
-| 中国近现代史纲要 | `Outline_of_Modern_and_Contemporary_Chinese_History` | ~100 |
-| 思想道德与法治 | `Ideological_Morality_and_Legal_System` | ~100 |
-| 习近平新时代中国特色社会主义思想概论 | `An_Introduction_to_Xi_Jinping_Thought_on_Socialism_with_Chinese_Characteristics_for_a_New_Era` | ~100 |
-
-**Hugging Face 仓库**：
-- QA 数据集：[HEHUA2005/rag-benchmark-qa-dataset](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-qa-dataset)
-- PDF 文档：[HEHUA2005/rag-benchmark-pdf-data](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-pdf-data)
-
----
-
-## 🎯 数据生成方法论
-
-### LLM-Driven QA 生成策略
-
-本 Benchmark 的核心创新在于采用 **LLM 驱动的自动化问题生成**方法，确保问题质量和评测的针对性：
-
-#### 1. 文档分块策略
-- **按页切分**：将 PDF 文档按页数切分，保留页码信息
-- **上下文保持**：每个问题生成时包含相邻页的上下文，确保语义完整性
-
-#### 2. 问题生成流程
 ```
-PDF 文档 → 按页提取 → LLM 生成问题 → 标注页码来源 → 质量筛选 → QA 数据集
+├── config.py           # 配置文件（API密钥、模型参数等）
+├── document_loader.py  # 文档加载器（支持PDF/PPTX/DOCX/TXT）
+├── text_splitter.py    # 文本切分器
+├── vector_store.py     # 向量数据库（基于ChromaDB）
+├── rag_agent.py        # RAG Agent核心逻辑
+├── process_data.py     # 数据处理入口
+├── main.py             # 主程序入口
+├── data/               # 课程材料存放目录
+└── benchmark_pipline/  # 评测流程
 ```
 
-#### 3. 来源标注机制
-由于 RAG 系统的核心能力是**文本检索与来源追溯**，我们的数据集设计重点考察：
-- ✅ **页码准确性**：答案必须标注正确的来源页码
-- ✅ **文件溯源**：答案需引用具体的文档文件名
-- ✅ **多来源整合**：复杂问题可能需要整合多个页面的信息
-
-#### 4. 评分权重设计
-```python
-Final Score = Source Accuracy × 0.6    # 来源准确性（最重要）
-            + Content Accuracy × 0.2   # 内容准确性
-            + Completeness × 0.15      # 完整性
-            + Relevance × 0.05         # 相关性
-```
-
-**设计理念**：来源准确性占 60% 权重，强调 RAG 系统的检索能力是核心竞争力。
-
-> **注意**：QA 数据生成代码未开放，因其涉及大作业核心实现。但生成的数据集已在 Hugging Face 上公开，可直接使用。
-
----
-
-## 🚀 快速开始
-
-### 环境要求
-
-- Python 3.8+
-- OpenAI API Key（或兼容 API）
-- 至少 2GB 磁盘空间
-
-### 安装步骤
-
-1. **克隆项目**
+## 环境配置
 
 ```bash
-git clone <repository-url>
-cd SJTU-NLP-project2-benchmark
-```
-
-2. **安装依赖**
-
-```bash
+pip install -r requirements.txt
 cd benchmark_pipline
 pip install -r requirements.txt
 ```
 
-3. **下载数据集**
+## 配置说明
 
-```bash
-# 下载所有数据（PDF + QA 数据集）
-python download_data.py
-
-# 或只下载 QA 数据集
-python download_data.py --download qa
-
-# 或只下载 PDF 文档
-python download_data.py --download pdf
-```
-
-4. **配置 API**
-
-```bash
-cp config.yaml.example config.yaml
-# 编辑 config.yaml，填写你的 API 配置
-```
-
-**config.yaml 关键配置**：
-
-```yaml
-api:
-  api_key: "your-api-key-here"
-  base_url: "https://api.openai.com/v1"
-  model_id: "gpt-4"
-
-benchmark:
-  splits: "all"  # 或指定单个课程，如 "Mao_Zedong_Thought"
-  max_questions_per_split: null  # null 表示运行所有问题
-  enable_visualization: true
-
-judge_evaluation:
-  workers: 4  # 并行 worker 数量
-```
-
-5. **快速测试**
-
-```bash
-# 每个数据集测试 1 个问题，验证环境配置
-python test_pipeline.py --config config.yaml
-```
-
-6. **运行完整评测**
-
-```bash
-python run_benchmark.py --config config.yaml
-```
-
----
-
-## 📊 评测流程详解
-
-### Pipeline 架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Step 1: 数据准备                                            │
-│  download_data.py                                           │
-│  ├── 从 Hugging Face 下载 PDF 文档 → ../data/              │
-│  └── 从 Hugging Face 下载 QA 数据集 → ./QA_data/          │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Step 2: 快速测试（可选）                                    │
-│  test_pipeline.py                                           │
-│  └── 每个数据集测试 1 个问题，验证配置                       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Step 3: 完整评测                                            │
-│  run_benchmark.py                                           │
-│  ├── 检查 QA 数据集完整性                                    │
-│  ├── 初始化 RAG Agent（需实现）                             │
-│  ├── Step 4: 生成 RAG 回答（step4_rag_answer.py）          │
-│  │   └── 并行调用 RAG Agent 生成答案                        │
-│  ├── Step 5: LLM 评分（step5_judge_evaluation.py）         │
-│  │   └── 基于评分标准自动打分                               │
-│  ├── 保存结果 → evaluation_results/{timestamp}/            │
-│  └── 生成可视化 → evaluation_results/{timestamp}/          │
-│                    visualizations/{split}/                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 评分维度说明
-
-#### 1. Source Accuracy（来源准确性）- 60%
-- 检查答案是否正确引用页码
-- 验证文件名是否准确
-- 评估来源标注的完整性
-
-#### 2. Content Accuracy（内容准确性）- 20%
-- 答案内容是否符合课程文档
-- 是否存在事实性错误
-- 专业术语使用是否准确
-
-#### 3. Completeness（完整性）- 15%
-- 答案是否全面覆盖问题要点
-- 是否遗漏关键信息
-- 论述是否充分
-
-#### 4. Relevance（相关性）- 5%
-- 答案是否切题
-- 是否包含无关内容
-
-**通过标准**：Final Score ≥ 6.0
-
----
-
-## 📈 可视化结果
-
-每个数据集自动生成 6 种可视化图表：
-
-1. **平均分柱状图**：各维度平均得分对比
-2. **分数分布箱线图**：展示分数分布和离群值
-3. **雷达图**：多维度能力分析
-4. **最终得分分布直方图**：整体得分分布情况
-5. **所有问题对比图**（≤100 题时）：每个问题的详细得分
-6. **权重贡献分析图**：各维度对最终得分的贡献
-
-### 结果目录结构
-
-```
-evaluation_results/
-└── 20251201_143025/              # 时间戳文件夹
-    ├── Mao_Zedong_Thought.csv   # 详细评分结果
-    ├── Principles_of_Marxism.csv
-    ├── ...
-    └── visualizations/           # 可视化图表
-        ├── Mao_Zedong_Thought/
-        │   ├── Mao_Zedong_Thought_average_scores.png
-        │   ├── Mao_Zedong_Thought_score_distribution.png
-        │   ├── Mao_Zedong_Thought_radar_chart.png
-        │   ├── Mao_Zedong_Thought_final_score_histogram.png
-        │   ├── Mao_Zedong_Thought_all_questions.png
-        │   └── Mao_Zedong_Thought_weighted_contribution.png
-        └── Principles_of_Marxism/
-            └── ...
-```
-
----
-
-## 🛠️ 配置与定制
-
-### 只测试特定课程
-
-编辑 [config.yaml](benchmark_pipline/config.yaml)：
-
-```yaml
-benchmark:
-  splits: "Mao_Zedong_Thought"  # 指定单个课程
-```
-
-### 限制测试问题数量
-
-```yaml
-benchmark:
-  max_questions_per_split: 50  # 每个课程最多测试 50 个问题
-```
-
-### 调整并行处理数量
-
-```yaml
-judge_evaluation:
-  workers: 8  # 增加到 8 个并行 worker
-```
-
-### 禁用可视化
-
-```yaml
-benchmark:
-  enable_visualization: false
-```
-
----
-
-## 🎓 如何集成你的 RAG 系统
-
-### 前置条件
-
-本 Benchmark 需要你已完成 RAG 系统的核心实现（大作业要求）：
-
-1. **文档处理模块**（[document_loader.py](document_loader.py)）
-   - `load_pdf()` - PDF 文本提取
-   - `load_pptx()` - PPT 文本提取
-   - `load_docx()` - Word 文档提取
-   - `load_txt()` - 纯文本读取
-
-2. **文本切分模块**（[text_splitter.py](text_splitter.py)）
-   - `split_text()` - 智能文本切分
-
-3. **向量数据库模块**（[vector_store.py](vector_store.py)）
-   - `get_embedding()` - 获取文本向量
-   - `add_documents()` - 文档入库
-   - `search()` - 向量检索
-
-4. **RAG Agent**（[rag_agent.py](rag_agent.py)）
-   - `retrieve_context()` - 检索相关上下文
-   - `generate_response()` - 生成回答
-
-### 集成步骤
-
-1. 确保你的 RAG Agent 在项目根目录的 [rag_agent.py](rag_agent.py) 中实现
-2. 确保 RAG Agent 能够处理 `../data/` 目录下的 PDF 文档
-3. 运行 Benchmark 评测即可
-
-**RAG Agent 接口要求**：
+在 `config.py` 中配置以下参数：
 
 ```python
-class RAGAgent:
-    def __init__(self):
-        """初始化 RAG Agent，加载文档并建立向量库"""
-        pass
-
-    def query(self, question: str) -> str:
-        """
-        处理问题并返回答案
-
-        Args:
-            question: 用户问题
-
-        Returns:
-            答案字符串，需包含来源信息（文件名和页码）
-        """
-        pass
+OPENAI_API_KEY = "your-api-key"
+OPENAI_API_BASE = "https://your-api-base/v1"
+MODEL_NAME = "your-model-name"
+OPENAI_EMBEDDING_MODEL = "your-embedding-model"
 ```
 
----
+## 已实现功能
 
-## 📊 API 资源说明
+### 1. 文档加载 (`document_loader.py`)
 
-### 阿里云百炼（推荐）
+- `load_pdf`: 使用 PyPDF2 按页提取 PDF 文本
+- `load_pptx`: 使用 python-pptx 按幻灯片提取 PPT 文本
+- `load_docx`: 使用 docx2txt 提取 Word 文档文本
+- `load_txt`: 读取纯文本文件
 
-新用户可获得 **90 天 100 万 token** 免费额度，支持：
-- Qwen-Max
-- Qwen-Plus
-- DeepSeek-V3
-- 多种 Embedding 模型
+### 2. 向量数据库 (`vector_store.py`)
 
-申请链接：https://help.aliyun.com/zh/model-studio/get-api-key
+- `get_embedding`: 调用 OpenAI API 获取文本向量
+- `add_documents`: 将文档块存入 ChromaDB
+- `search`: 向量相似度检索 Top-K 文档
 
-### 其他兼容 API
+### 3. RAG Agent (`rag_agent.py`)
 
-本项目支持任何 OpenAI 兼容的 API 接口：
-- OpenAI 官方 API
-- Azure OpenAI
-- 本地部署的 LLM（如 Ollama、vLLM）
+- `system_prompt`: 定义课程助教角色与回答规范
+- `retrieve_context`: 检索相关上下文并格式化来源信息
+- `generate_response`: 构建提示词并调用 LLM 生成回答
 
----
+## 使用方法
 
-## 🐛 常见问题
+1. 将课程材料放入 `data/` 目录
+2. 运行数据处理脚本构建向量库
+3. 启动问答系统
 
-### Q1: 运行 benchmark 时提示数据集不存在？
+```bash
+python main.py
+```
+
+## Benchmark 评测
 
 ```bash
 cd benchmark_pipline
-python download_data.py --download qa
+python test_pipeline.py --config config.yaml
 ```
-
-### Q2: 如何只测试一门课程？
-
-编辑 `config.yaml`：
-```yaml
-benchmark:
-  splits: "Mao_Zedong_Thought"
-```
-
-### Q3: 评测速度太慢怎么办？
-
-增加并行 worker 数量：
-```yaml
-judge_evaluation:
-  workers: 8  # 根据你的 CPU 核心数调整
-```
-
-### Q4: 如何理解评分结果？
-
-- **Final Score ≥ 6.0**：通过，系统表现良好
-- **Source Accuracy 低**：检索能力不足，需优化向量检索或文本切分
-- **Content Accuracy 低**：生成能力不足，需优化 Prompt 或更换更强的 LLM
-- **Completeness 低**：检索的上下文不够充分，需增加 `TOP_K` 参数
-
-### Q5: 可以自定义评分权重吗？
-
-可以修改 [step5_judge_evaluation.py](benchmark_pipline/step5_judge_evaluation.py) 中的评分逻辑：
-
-```python
-final_score = (
-    source_accuracy * 0.6 +
-    content_accuracy * 0.2 +
-    completeness * 0.15 +
-    relevance * 0.05
-)
-```
-
----
-
-## 📁 项目结构
-
-```
-SJTU-NLP-project2-benchmark/
-├── benchmark_pipline/        # Benchmark 评测框架（本项目核心）
-│   ├── config.yaml.example   # 配置文件模板
-│   ├── download_data.py      # 数据下载脚本
-│   ├── download_pdf_data.py  # PDF 数据下载
-│   ├── test_pipeline.py      # 快速测试脚本
-│   ├── run_benchmark.py      # 完整评测脚本
-│   ├── step4_rag_answer.py   # RAG 回答生成
-│   ├── step5_judge_evaluation.py  # LLM 评分
-│   ├── visualize.py          # 可视化生成
-│   ├── upload_pdf_data.py    # 数据上传（维护者使用）
-│   ├── QA_data/              # QA 数据集（下载后生成）
-│   ├── evaluation_results/   # 评测结果（自动生成）
-│   └── README.md             # Benchmark 详细文档
-│
-├── data/                     # PDF 课程文档（下载后生成）
-├── vector_db/                # 向量数据库（RAG 系统生成）
-│
-├── config.py                 # RAG 系统配置
-├── document_loader.py        # 文档加载模块（需实现）
-├── text_splitter.py          # 文本切分模块（需实现）
-├── vector_store.py           # 向量数据库模块（需实现）
-├── rag_agent.py             # RAG Agent（需实现）
-├── process_data.py          # 数据处理流水线
-├── main.py                  # 交互式主程序
-├── requirements.txt         # 项目依赖
-└── README.md                # 本文件
-```
-
----
-
-## 🌟 扩展方向
-
-### 技术优化
-
-- **混合检索**：结合 BM25（稀疏检索）和向量检索（密集检索）
-- **重排序**：使用 Reranker 模型提升检索精度
-- **查询改写**：优化用户问题以提高检索效果
-- **多模态支持**：处理课件中的图片、图表等非文本内容
-
-### 评测优化
-
-- **更多维度**：增加逻辑连贯性、语言流畅度等评分维度
-- **人工标注**：结合人工评测进行 Benchmark 校准
-- **对抗样本**：生成更具挑战性的测试问题
-
----
-
-## 📝 作业提交
-
-提交内容应包括：
-
-1. **完整的 RAG 系统实现**
-2. **Benchmark 评测结果**
-   - CSV 结果文件
-   - 可视化图表
-   - 统计分析报告
-3. **实验报告**
-   - 设计思路
-   - 实现细节
-   - Benchmark 结果分析
-   - 改进方向
-4. **扩展功能说明**（如有）
-
----
-
-## 📚 参考资料
-
-- [RAG 技术综述](https://arxiv.org/abs/2312.10997)
-- [Hugging Face Datasets 文档](https://huggingface.co/docs/datasets)
-- [ChromaDB 文档](https://docs.trychroma.com/)
-- [OpenAI API 文档](https://platform.openai.com/docs)
-- [LangChain RAG 教程](https://python.langchain.com/docs/use_cases/question_answering/)
-
----
-
-## 👥 贡献者
-
-- 项目作者：HEHUA
-- 课程：上海交通大学 CS3602 自然语言处理
-- 学期：2024-2025-1
-
----
-
-## 📄 License
-
-本项目采用 MIT 协议开源，详见 LICENSE 文件。
-
----
-
-<div align="center">
-
-**Happy Benchmarking!** 🎉
-
-如有问题，欢迎提交 Issue 或 PR
-
-[Hugging Face Dataset](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-qa-dataset) | [项目文档](benchmark_pipline/README.md)
-
-</div>

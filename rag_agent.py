@@ -25,7 +25,20 @@ class RAGAgent:
         """
         TODO: 实现并调整系统提示词，使其符合课程助教的角色和回答策略
         """
-        self.system_prompt = """你是这门课程的助教..."""
+        self.system_prompt = """你是一位专业、耐心的课程助教，负责回答学生关于课程内容的问题。
+
+你的职责：
+1. 基于提供的课程材料，准确、清晰地回答学生问题
+2. 如果问题涉及课程材料中的内容，请引用具体来源（文件名和页码）
+3. 如果课程材料中没有相关内容，请诚实告知学生，并尝试提供一般性指导
+4. 使用友好、专业的语气，鼓励学生深入思考
+5. 对于复杂概念，尽量用简洁易懂的方式解释
+
+回答规范：
+- 回答要有条理，必要时使用编号或分点
+- 引用来源时使用格式：[来源：文件名, 第X页]
+- 如果学生的问题不清楚，可以请求澄清
+- 避免编造不存在的内容"""
 
     def retrieve_context(
         self, query: str, top_k: int = TOP_K
@@ -38,7 +51,30 @@ class RAGAgent:
         3. 每个检索结果需要包含来源信息（文件名和页码）
         4. 返回格式化的上下文字符串和原始检索结果列表
         """
-        pass
+        # 使用向量数据库检索相关文档
+        retrieved_docs = self.vector_store.search(query, top_k=top_k)
+        
+        if not retrieved_docs:
+            return "", []
+        
+        # 格式化检索结果，构建上下文字符串
+        context_parts = []
+        for i, doc in enumerate(retrieved_docs, 1):
+            content = doc.get("content", "")
+            metadata = doc.get("metadata", {})
+            filename = metadata.get("filename", "未知文件")
+            page_number = metadata.get("page_number", 0)
+            
+            # 构建带来源信息的上下文片段
+            if page_number > 0:
+                source_info = f"[来源：{filename}, 第{page_number}页]"
+            else:
+                source_info = f"[来源：{filename}]"
+            
+            context_parts.append(f"--- 参考资料 {i} {source_info} ---\n{content}\n")
+        
+        context_str = "\n".join(context_parts)
+        return context_str, retrieved_docs
 
     def generate_response(
         self,
@@ -66,7 +102,15 @@ class RAGAgent:
         3. 包含来源信息（文件名和页码）
         4. 返回用户提示词
         """
-        user_text = query
+        user_text = f"""以下是与问题相关的课程材料：
+
+{context}
+
+---
+
+学生问题：{query}
+
+请根据上述课程材料回答学生的问题。如果引用了材料内容，请注明来源。"""
 
         messages.append({"role": "user", "content": user_text})
 
@@ -100,8 +144,7 @@ class RAGAgent:
         返回:
             生成的回答
         """
-        # context, retrieved_docs = self.retrieve_context(query, top_k=top_k)
-        context = None
+        context, retrieved_docs = self.retrieve_context(query, top_k=top_k)
 
         if not context:
             context = "（未检索到特别相关的课程材料）"

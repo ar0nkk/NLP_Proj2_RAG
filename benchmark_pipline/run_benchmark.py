@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 import csv
 import yaml
+import pandas as pd
 from datetime import datetime
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -57,7 +58,7 @@ def load_config(config_path: Path):
 
 
 def check_datasets(qa_data_dir: Path, splits: list):
-    """检查QA数据集是否存在"""
+    """检查QA数据集是否存在（支持 parquet 和 csv 格式）"""
     print(f"\n{Colors.BLUE}{'='*60}{Colors.RESET}")
     print(f"{Colors.BLUE}Checking QA Datasets{Colors.RESET}")
     print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
@@ -71,27 +72,45 @@ def check_datasets(qa_data_dir: Path, splits: list):
     available_files = {}
     missing_splits = []
 
+    # 检查 data 子目录是否存在
+    data_subdir = qa_data_dir / "data"
+    search_dirs = [qa_data_dir, data_subdir] if data_subdir.exists() else [qa_data_dir]
+
     for split_name in splits:
-        csv_file = qa_data_dir / f"{split_name}.csv"
-
-        if csv_file.exists():
-            try:
-                # 验证文件是否有效
-                with open(csv_file, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    row_count = sum(1 for _ in reader)
-
-                if row_count > 0:
-                    available_files[split_name] = csv_file
-                    print(f"{Colors.GREEN}✓ Found: {csv_file} ({row_count} questions){Colors.RESET}")
-                else:
-                    print(f"{Colors.RED}✗ Empty file: {csv_file}{Colors.RESET}")
-                    missing_splits.append(split_name)
-            except Exception as e:
-                print(f"{Colors.RED}✗ Invalid file: {csv_file} ({e}){Colors.RESET}")
-                missing_splits.append(split_name)
-        else:
-            print(f"{Colors.RED}✗ Not found: {csv_file}{Colors.RESET}")
+        found = False
+        
+        for search_dir in search_dirs:
+            # 优先检查 parquet 文件（支持 HuggingFace 格式）
+            parquet_file = search_dir / f"{split_name}-00000-of-00001.parquet"
+            csv_file = search_dir / f"{split_name}.csv"
+            
+            if parquet_file.exists():
+                try:
+                    df = pd.read_parquet(parquet_file)
+                    row_count = len(df)
+                    if row_count > 0:
+                        available_files[split_name] = parquet_file
+                        print(f"{Colors.GREEN}✓ Found: {parquet_file} ({row_count} questions){Colors.RESET}")
+                        found = True
+                        break
+                except Exception as e:
+                    print(f"{Colors.RED}✗ Invalid file: {parquet_file} ({e}){Colors.RESET}")
+            
+            elif csv_file.exists():
+                try:
+                    with open(csv_file, 'r', encoding='utf-8') as f:
+                        reader = csv.DictReader(f)
+                        row_count = sum(1 for _ in reader)
+                    if row_count > 0:
+                        available_files[split_name] = csv_file
+                        print(f"{Colors.GREEN}✓ Found: {csv_file} ({row_count} questions){Colors.RESET}")
+                        found = True
+                        break
+                except Exception as e:
+                    print(f"{Colors.RED}✗ Invalid file: {csv_file} ({e}){Colors.RESET}")
+        
+        if not found:
+            print(f"{Colors.RED}✗ Not found: {split_name}{Colors.RESET}")
             missing_splits.append(split_name)
 
     if missing_splits:
@@ -102,16 +121,25 @@ def check_datasets(qa_data_dir: Path, splits: list):
     return available_files
 
 
-def load_questions_from_csv(csv_file: Path, max_questions: int = None):
-    """从CSV文件加载问题"""
+def load_questions_from_file(file_path: Path, max_questions: int = None):
+    """从文件加载问题（支持 parquet 和 csv 格式）"""
     questions = []
-
-    with open(csv_file, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for i, row in enumerate(reader):
-            if max_questions and i >= max_questions:
-                break
-            questions.append(row)
+    
+    file_ext = file_path.suffix.lower()
+    
+    if file_ext == '.parquet':
+        df = pd.read_parquet(file_path)
+        if max_questions:
+            df = df.head(max_questions)
+        questions = df.to_dict('records')
+    else:
+        # CSV 格式
+        with open(file_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for i, row in enumerate(reader):
+                if max_questions and i >= max_questions:
+                    break
+                questions.append(row)
 
     return questions
 
@@ -233,7 +261,7 @@ def print_statistics(split_name: str, stats: dict):
 
 def process_single_split(
     split_name: str,
-    csv_file: Path,
+    data_file: Path,
     agent: RAGAgent,
     config: dict,
     max_questions: int = None,
@@ -250,7 +278,7 @@ def process_single_split(
     try:
         # 1. 加载问题
         print(f"\n{Colors.YELLOW}[1/5] Loading questions...{Colors.RESET}")
-        questions = load_questions_from_csv(csv_file, max_questions)
+        questions = load_questions_from_file(data_file, max_questions)
         print(f"{Colors.GREEN}✓ Loaded {len(questions)} questions{Colors.RESET}")
 
         if max_questions:
@@ -388,10 +416,10 @@ def main():
     # 4. 处理每个split
     all_results = []
 
-    for split_name, csv_file in available_files.items():
+    for split_name, data_file in available_files.items():
         result = process_single_split(
             split_name=split_name,
-            csv_file=csv_file,
+            data_file=data_file,
             agent=agent,
             config=config,
             max_questions=max_questions,

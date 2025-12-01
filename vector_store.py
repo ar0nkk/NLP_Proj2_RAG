@@ -48,7 +48,11 @@ class VectorStore:
         TODO: 使用OpenAI API获取文本的embedding向量
 
         """
-        pass
+        response = self.client.embeddings.create(
+            model=OPENAI_EMBEDDING_MODEL,
+            input=text
+        )
+        return response.data[0].embedding
 
     def add_documents(self, chunks: List[Dict[str, str]]) -> None:
         """添加文档块到向量数据库
@@ -59,7 +63,35 @@ class VectorStore:
         3. 获取文档块元数据
         5. 打印添加进度
         """
-        pass
+        for i, chunk in enumerate(tqdm(chunks, desc="添加文档到向量数据库", unit="块")):
+            content = chunk.get("content", "")
+            if not content:
+                continue
+            
+            # 获取 embedding 向量
+            embedding = self.get_embedding(content)
+            
+            # 准备元数据
+            metadata = {
+                "filename": chunk.get("filename", "unknown"),
+                "filepath": chunk.get("filepath", ""),
+                "filetype": chunk.get("filetype", ""),
+                "page_number": chunk.get("page_number", 0),
+                "chunk_id": chunk.get("chunk_id", 0),
+            }
+            
+            # 生成唯一 ID
+            doc_id = f"{metadata['filename']}_{metadata['page_number']}_{metadata['chunk_id']}_{i}"
+            
+            # 添加到 collection
+            self.collection.add(
+                ids=[doc_id],
+                embeddings=[embedding],
+                documents=[content],
+                metadatas=[metadata]
+            )
+        
+        print(f"\n成功添加 {len(chunks)} 个文档块到向量数据库")
 
     def search(self, query: str, top_k: int = TOP_K) -> List[Dict]:
         """搜索相关文档
@@ -73,8 +105,28 @@ class VectorStore:
            - metadata: 元数据（文件名、页码等）
         4. 返回格式化的结果列表
         """
-
-        pass
+        # 获取查询文本的 embedding 向量
+        query_embedding = self.get_embedding(query)
+        
+        # 使用 ChromaDB 进行向量搜索
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k
+        )
+        
+        # 格式化返回结果
+        formatted_results = []
+        if results and results["documents"] and results["documents"][0]:
+            documents = results["documents"][0]
+            metadatas = results["metadatas"][0] if results["metadatas"] else [{}] * len(documents)
+            
+            for doc, metadata in zip(documents, metadatas):
+                formatted_results.append({
+                    "content": doc,
+                    "metadata": metadata
+                })
+        
+        return formatted_results
 
     def clear_collection(self) -> None:
         """清空collection"""

@@ -1,8 +1,8 @@
 # API配置
-OPENAI_API_KEY = "sk-liyukunkun"
-OPENAI_API_BASE = "http://localhost:4000/v1"
-MODEL_NAME = "gair/qwen-235B"
-OPENAI_EMBEDDING_MODEL = "None"
+OPENAI_API_KEY = "sk-b22840099b784a28b407afcaf5485b71"
+OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+MODEL_NAME = "qwen3-max"
+OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
 
 # 数据目录配置
 DATA_DIR = "data/"
