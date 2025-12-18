@@ -19,8 +19,46 @@ class TextSplitter:
         """
         if not text:
             return []
+        chunk_size = max(1, self.chunk_size)
+        overlap = max(0, min(self.chunk_overlap, chunk_size - 1))
+        sentence_endings = "。！？.!?"
 
-        chunks = []
+        chunks: List[str] = []
+        start = 0
+        text_len = len(text)
+
+        while start < text_len:
+            end = min(start + chunk_size, text_len)
+            adjusted_end = end
+
+            window = text[start:end]
+            candidate_positions: List[int] = []  # 用于存储候选切分位置
+
+            # 查找是否有合适句子结束符
+            for symbol in sentence_endings:
+                idx = window.rfind(symbol)
+                if idx != -1:
+                    candidate_positions.append(idx + 1)
+
+            newline_idx = window.rfind("\n\n")
+            if newline_idx != -1:
+                candidate_positions.append(newline_idx + 2)
+
+            if candidate_positions:
+                best = max(candidate_positions)
+                if start + best > start:
+                    adjusted_end = start + best
+
+            chunk = text[start:adjusted_end].strip() # 提取切分后的文本块
+            if chunk:
+                chunks.append(chunk)
+
+            if adjusted_end >= text_len:
+                break
+
+            start = max(0, adjusted_end - overlap)
+            if start >= text_len:
+                break
 
         return chunks
 
