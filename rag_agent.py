@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 
 from openai import OpenAI
 
@@ -39,41 +39,6 @@ class RAGAgent:
     - 引用来源时使用格式：[来源：文件名, 第X页]，若无页码则写为[来源：文件名]
     - 如果学生的问题不清楚，可以请求澄清
     - 严禁编造资料；当上下文不足时要说明"""
-
-        self.exercise_prompt = """你是一位专业课程助教，擅长基于课程材料设计分层练习题。
-
-    生成习题时需要遵循以下要求：
-    1. 题目数量控制在3-5道，覆盖不同难度（基础、提高、拓展）
-    2. 每道题必须包含：题干、难度标签、标准答案、解析
-    3. 解析中需要依据课程材料给出出处，沿用格式：[来源：文件名, 第X页]
-    4. 如果缺少必要资料，请说明该题无法生成并给出补充建议
-    5. 题型可多样（选择、简答、推导等），但要与学生的请求相匹配
-    6. 输出格式保持清晰编号，便于学生练习
-    """
-
-        self.exercise_triggers = (
-            "生成习题",
-            "生成练习",
-            "生成练习题",
-            "生成题目",
-            "自动出题",
-            "出几道题",
-            "出一些题",
-            "练习题",
-            "练习题目",
-            "设计习题",
-            "设计练习",
-            "练习任务",
-            "practice problem",
-            "practice problems",
-            "practice question",
-            "practice questions",
-            "generate exercise",
-            "generate exercises",
-            "create exercise",
-            "create exercises",
-            "quiz",
-        )
 
     def retrieve_context(
         self, query: str, top_k: int = TOP_K
@@ -170,72 +135,14 @@ class RAGAgent:
         except Exception as e:
             return f"生成回答时出错: {str(e)}"
 
-    def generate_exercise_response(
-        self,
-        query: str,
-        context: str,
-        chat_history: Optional[List[Dict]] = None,
-    ) -> str:
-        messages = [{"role": "system", "content": self.exercise_prompt}]
-
-        if chat_history:
-            messages.extend(chat_history)
-
-        context_block = context.strip() if context.strip() else "（当前没有可用的课程材料，请基于已有知识给出练习题并标明缺失）"
-        user_text = f"""以下是与题目设计相关的课程材料：
-
-{context_block}
-
----
-
-学生需求：{query}
-
-请基于材料内容自动生成3-5道梯度递进的练习题。每道题需要包含：
-1. 题干（清晰陈述，必要时给出上下文）
-2. 难度标签（基础/提高/拓展）
-3. 标准答案
-4. 解析：说明解题思路，并引用材料来源；若缺少依据，说明原因
-
-优先围绕学生的具体要求设置题目类型和主题。"""
-
-        messages.append({"role": "user", "content": user_text})
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=0.5,
-                max_tokens=1800,
-            )
-
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"生成习题时出错: {str(e)}"
-
-    def _is_exercise_request(self, query: str) -> bool:
-        if not query:
-            return False
-
-        query_stripped = query.strip()
-        q_lower = query_stripped.lower()
-
-        for phrase in self.exercise_triggers:
-            if phrase in query_stripped or phrase in q_lower:
-                return True
-
-        chinese_generators = ("生成", "设计", "出", "给", "安排")
-        chinese_targets = ("习题", "练习", "练习题", "题目")
-
-        if any(t in query_stripped for t in chinese_targets) and any(
-            g in query_stripped for g in chinese_generators
-        ):
-            return True
-
-        return False
 
     def answer_question(
-        self, query: str, chat_history: Optional[List[Dict]] = None, top_k: int = TOP_K
-    ) -> Dict[str, any]:
+        self,
+        query: str,
+        chat_history: Optional[List[Dict]] = None,
+        top_k: int = TOP_K,
+        return_details: bool = False,
+    ) -> Any:
         """回答问题
 
         参数:
@@ -251,35 +158,14 @@ class RAGAgent:
         if not context:
             context = "（未检索到特别相关的课程材料）"
 
-        if self._is_exercise_request(query):
-            answer = self.generate_exercise_response(query, context, chat_history)
-        else:
-            answer = self.generate_response(query, context, chat_history)
+        answer = self.generate_response(query, context, chat_history)
+
+        if return_details:
+            return {
+                "answer": answer,
+                "context": context,
+                "retrieved_docs": retrieved_docs,
+                "is_exercise": False,
+            }
 
         return answer
-
-    def chat(self) -> None:
-        """交互式对话"""
-        print("=" * 60)
-        print("欢迎使用智能课程助教系统！")
-        print("提示：输入诸如“生成习题”或“出几道题”可获取自动练习题。")
-        print("=" * 60)
-
-        chat_history = []
-
-        while True:
-            try:
-                query = input("\n学生: ").strip()
-
-                if not query:
-                    continue
-
-                answer = self.answer_question(query, chat_history=chat_history)
-
-                print(f"\n助教: {answer}")
-
-                chat_history.append({"role": "user", "content": query})
-                chat_history.append({"role": "assistant", "content": answer})
-
-            except Exception as e:
-                print(f"\n错误: {str(e)}")
