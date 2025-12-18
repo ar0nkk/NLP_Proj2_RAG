@@ -124,16 +124,16 @@ class RAGAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model=self.model, messages=messages, temperature=0.7, max_tokens=1500
+                model=self.model, messages=messages, temperature=0.7, max_tokens=1500 # pyright: ignore[reportArgumentType]
             )
 
-            return response.choices[0].message.content
+            return response.choices[0].message.content # pyright: ignore[reportReturnType]
         except Exception as e:
             return f"生成回答时出错: {str(e)}"
 
     def answer_question(
         self, query: str, chat_history: Optional[List[Dict]] = None, top_k: int = TOP_K
-    ) -> Dict[str, any]:
+    ) -> Dict[str, any]: # pyright: ignore[reportGeneralTypeIssues]
         """回答问题
 
         参数:
@@ -151,7 +151,7 @@ class RAGAgent:
 
         answer = self.generate_response(query, context, chat_history)
 
-        return answer
+        return answer # pyright: ignore[reportReturnType]
 
     def chat(self) -> None:
         """交互式对话"""

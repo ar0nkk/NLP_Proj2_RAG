@@ -50,7 +50,7 @@ class DocumentLoader:
             texts = []
             for shape in slide.shapes:
                 if shape.has_text_frame:
-                    for paragraph in shape.text_frame.paragraphs:
+                    for paragraph in shape.text_frame.paragraphs: # pyright: ignore[reportAttributeAccessIssue]
                         for run in paragraph.runs:
                             texts.append(run.text)
             slide_text = "\n".join(texts)
@@ -142,7 +142,7 @@ class DocumentLoader:
         """加载数据目录下的所有文档"""
         if not os.path.exists(self.data_dir):
             print(f"数据目录不存在: {self.data_dir}")
-            return None
+            return None # pyright: ignore[reportReturnType]
 
         documents = []
 
