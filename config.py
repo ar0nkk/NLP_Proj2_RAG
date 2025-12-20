@@ -1,7 +1,7 @@
 # API配置
-OPENAI_API_KEY = "sk-b22840099b784a28b407afcaf5485b71"
+OPENAI_API_KEY = "sk-0fe3e1a96aee4c228b8eddc74fa70a46"
 OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-MODEL_NAME = "deepseek-v3.2-exp"
+MODEL_NAME = "qwen3-max"
 OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
 
 # 数据目录配置
