@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 
 from openai import OpenAI
 
@@ -27,18 +27,18 @@ class RAGAgent:
         """
         self.system_prompt = """你是一位专业、耐心的课程助教，负责回答学生关于课程内容的问题。
 
-你的职责：
-1. 基于提供的课程材料，准确、清晰地回答学生问题
-2. 如果问题涉及课程材料中的内容，请引用具体来源（文件名和页码）
-3. 如果课程材料中没有相关内容，请诚实告知学生，并尝试提供一般性指导
-4. 使用友好、专业的语气，鼓励学生深入思考
-5. 对于复杂概念，尽量用简洁易懂的方式解释
+    你的职责：
+    1. 基于提供的课程材料，准确、清晰地回答学生问题
+    2. 如果问题涉及课程材料中的内容，请引用具体来源（文件名和页码）
+    3. 如果课程材料中没有相关内容，请明确说明并尝试提供一般性指导
+    4. 使用友好、专业的语气，鼓励学生深入思考
+    5. 对于复杂概念，优先用简洁易懂的方式解释，并给出关键步骤
 
-回答规范：
-- 回答要有条理，必要时使用编号或分点
-- 引用来源时使用格式：[来源：文件名, 第X页]
-- 如果学生的问题不清楚，可以请求澄清
-- 避免编造不存在的内容"""
+    回答规范：
+    - 回答要有条理，必要时使用编号或分点
+    - 引用来源时使用格式：[来源：文件名, 第X页]，若无页码则写为[来源：文件名]
+    - 如果学生的问题不清楚，可以请求澄清
+    - 严禁编造资料；当上下文不足时要说明"""
 
     def retrieve_context(
         self, query: str, top_k: int = TOP_K
@@ -53,14 +53,17 @@ class RAGAgent:
         """
         # 使用向量数据库检索相关文档
         retrieved_docs = self.vector_store.search(query, top_k=top_k)
-        
+
         if not retrieved_docs:
-            return "", []
+            placeholder = "（未检索到与该问题直接相关的课程材料）"
+            return placeholder, []
         
         # 格式化检索结果，构建上下文字符串
         context_parts = []
         for i, doc in enumerate(retrieved_docs, 1):
-            content = doc.get("content", "")
+            content = doc.get("content", "").strip() # 使用strip()去除多余空白
+            if not content:
+                continue
             metadata = doc.get("metadata", {})
             filename = metadata.get("filename", "未知文件")
             page_number = metadata.get("page_number", 0)
@@ -102,15 +105,16 @@ class RAGAgent:
         3. 包含来源信息（文件名和页码）
         4. 返回用户提示词
         """
+        context_block = context.strip() if context.strip() else "（当前没有可用的课程材料，请基于已有知识回答并标明缺失）"
         user_text = f"""以下是与问题相关的课程材料：
 
-{context}
+{context_block}
 
 ---
 
 学生问题：{query}
 
-请根据上述课程材料回答学生的问题。如果引用了材料内容，请注明来源。"""
+请根据上述课程材料回答学生的问题。如果引用了材料内容，请注明来源，并在来源缺失时说明理由。"""
 
         messages.append({"role": "user", "content": user_text})
 
@@ -131,9 +135,14 @@ class RAGAgent:
         except Exception as e:
             return f"生成回答时出错: {str(e)}"
 
+
     def answer_question(
-        self, query: str, chat_history: Optional[List[Dict]] = None, top_k: int = TOP_K
-    ) -> Dict[str, any]:
+        self,
+        query: str,
+        chat_history: Optional[List[Dict]] = None,
+        top_k: int = TOP_K,
+        return_details: bool = False,
+    ) -> Any:
         """回答问题
 
         参数:
@@ -151,29 +160,12 @@ class RAGAgent:
 
         answer = self.generate_response(query, context, chat_history)
 
+        if return_details:
+            return {
+                "answer": answer,
+                "context": context,
+                "retrieved_docs": retrieved_docs,
+                "is_exercise": False,
+            }
+
         return answer
-
-    def chat(self) -> None:
-        """交互式对话"""
-        print("=" * 60)
-        print("欢迎使用智能课程助教系统！")
-        print("=" * 60)
-
-        chat_history = []
-
-        while True:
-            try:
-                query = input("\n学生: ").strip()
-
-                if not query:
-                    continue
-
-                answer = self.answer_question(query, chat_history=chat_history)
-
-                print(f"\n助教: {answer}")
-
-                chat_history.append({"role": "user", "content": query})
-                chat_history.append({"role": "assistant", "content": answer})
-
-            except Exception as e:
-                print(f"\n错误: {str(e)}")
