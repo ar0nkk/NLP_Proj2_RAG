@@ -187,12 +187,12 @@ class ExerciseAgent(RAGAgent):
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=messages, # pyright: ignore[reportArgumentType]
                 temperature=0.5,
                 max_tokens=1800,
             )
 
-            return response.choices[0].message.content
+            return response.choices[0].message.content # pyright: ignore[reportReturnType]
         except Exception as e:
             return f"生成习题时出错: {str(e)}"
 

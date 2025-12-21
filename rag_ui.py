@@ -71,7 +71,7 @@ def run_cli_session(agent) -> None:
             print(f"\n助教: {answer_text}")
 
             chat_history.append({"role": "user", "content": query})
-            chat_history.append({"role": "assistant", "content": answer_text})
+            chat_history.append({"role": "assistant", "content": answer_text}) # pyright: ignore[reportArgumentType]
 
         except KeyboardInterrupt:
             print("\n结束对话。")
