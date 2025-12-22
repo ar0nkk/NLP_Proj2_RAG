@@ -40,7 +40,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. 添加资料
-将课程文件放入 `data/` 文件夹中（目前支持的格式： `".pdf", ".pptx", ".docx", ".txt"`）。你也可以从 Hugging Face 下载样例数据：[五大红课 pdf](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-pdf-data)
+将课程文件放入 `data/` 文件夹中（目前支持的格式： `".pdf", ".pptx", ".docx", ".txt"`）。你也可以从 Hugging Face 下载样例数据：[五大红课 pdf](https://huggingface.co/datasets/HEHUA2005/rag-benchmark-pdf-data/tree/main)
 
 ### 3. 处理数据
 运行 `process_data.py`，时间取决于数据量
