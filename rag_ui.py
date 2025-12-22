@@ -1,8 +1,9 @@
 from typing import Dict, List
-
+import gradio as gr
+from config import TOP_K, THRESHOLD
 
 # 格式化参考资料为Markdown
-def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = 3) -> str:
+def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = TOP_K) -> str:
     if not retrieved_docs:
         return ""
 
@@ -12,9 +13,9 @@ def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = 3) -> st
         filename = metadata.get("filename", "未知文件")
         page_number = metadata.get("page_number")
         if page_number:
-            header = f"{idx}. {filename}（第{page_number}页）"
+            header = f"{idx}. {filename}（第{page_number}页）| distance: {doc.get('score', 0):.4f}"
         else:
-            header = f"{idx}. {filename}"
+            header = f"{idx}. {filename} | distance: {doc.get('score', 0):.4f}"
 
         snippet = doc.get("content", "").strip().replace("\n", " ")
         if len(snippet) > 180:
@@ -51,7 +52,7 @@ def run_cli_session(agent) -> None:
     print("提示：输入诸如“出3道中等难度选择题巩固HMM”自动生成习题。")
     print("=" * 60)
 
-    chat_history: List[Dict[str, str]] = []
+    chat_history: List[Dict[str, str | None]] = []
 
     while True:
         try:
@@ -71,7 +72,7 @@ def run_cli_session(agent) -> None:
             print(f"\n助教: {answer_text}")
 
             chat_history.append({"role": "user", "content": query})
-            chat_history.append({"role": "assistant", "content": answer_text}) # pyright: ignore[reportArgumentType]
+            chat_history.append({"role": "assistant", "content": answer_text})
 
         except KeyboardInterrupt:
             print("\n结束对话。")
@@ -81,19 +82,13 @@ def run_cli_session(agent) -> None:
 
 # 启动Gradio UI界面
 def launch_gradio_ui(agent, share: bool = False) -> None:
-    try:
-        import gradio as gr
-    except ImportError as exc:
-        raise ImportError(
-            "未检测到gradio，请先运行 `pip install gradio` 再开启UI界面"
-        ) from exc
-
     def respond(message: str, history: List[List[str]]):
         chat_history = _convert_history(history)
         result = agent.answer_question(
             message,
             chat_history=chat_history,
             return_details=True,
+            threshold=THRESHOLD,
         )
 
         if isinstance(result, str):
@@ -124,8 +119,8 @@ def launch_gradio_ui(agent, share: bool = False) -> None:
             title="课程助教 RAG 助手",
             description=description,
             examples=[
-                "总结一下隐马尔可夫模型（HMM）的核心概念。",
-                "出题可指定题目数量、难度、类型，例如：生成3道中等的HMM的选择题。",
+                "列出课程大纲。",
+                "针对课程资料生成3道中等难度的选择题。",
             ],
             chatbot=gr.Chatbot(
                 height=620,

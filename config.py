@@ -1,5 +1,9 @@
+# modify by yourself
 # API配置
-OPENAI_API_KEY = "sk-b22840099b784a28b407afcaf5485b71"
+import os
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 MODEL_NAME = "deepseek-v3.2-exp"
 OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
@@ -17,4 +21,6 @@ CHUNK_OVERLAP = 50
 MAX_TOKENS = 1000
 
 # RAG配置
-TOP_K = 3
+TOP_K = 5
+THRESHOLD = 1.5
+INTERACTION_MODE = "ui" # 交互方式配置：ui 或 cli
