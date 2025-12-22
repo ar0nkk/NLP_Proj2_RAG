@@ -2,7 +2,7 @@ import os
 from typing import List, Dict, Optional
 
 import docx2txt
-from PyPDF2 import PdfReader
+import pdfplumber
 from pptx import Presentation
 
 from config import DATA_DIR
@@ -28,11 +28,11 @@ class DocumentLoader:
         """
         # [AI] 查询 PdfReader 文本提取方法函数 extract_text
         pages = []
-        reader = PdfReader(file_path)
-        for page_idx, page in enumerate(reader.pages, 1): # start from page 1
-            text = page.extract_text() or "" # handle None case
-            formatted_text = f"--- 第 {page_idx} 页 ---\n{text}\n" # for identification
-            pages.append({"text": formatted_text})
+        with pdfplumber.open(file_path) as pdf:
+            for page_idx, page in enumerate(pdf.pages, 1): # start from page 1
+                text = page.extract_text() or "" # handle None case
+                formatted_text = f"--- 第 {page_idx} 页 ---\n{text}\n" # for identification
+                pages.append({"text": formatted_text})
         return pages
 
     def load_pptx(self, file_path: str) -> List[Dict]:

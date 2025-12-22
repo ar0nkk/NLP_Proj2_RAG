@@ -48,6 +48,7 @@ class VectorStore:
         TODO: 使用OpenAI API获取文本的embedding向量
 
         """
+        # [AI] 查询 OpenAI API
         response = self.client.embeddings.create(
             model=OPENAI_EMBEDDING_MODEL,
             input=text
@@ -63,15 +64,14 @@ class VectorStore:
         3. 获取文档块元数据
         5. 打印添加进度
         """
+        # [AI] 查询 tqdm API 和元数据构造方法
         for i, chunk in enumerate(tqdm(chunks, desc="添加文档到向量数据库", unit="块")):
             content = chunk.get("content", "")
             if not content:
                 continue
             
-            # 获取 embedding 向量
             embedding = self.get_embedding(content)
             
-            # 准备元数据
             metadata = {
                 "filename": chunk.get("filename", "unknown"),
                 "filepath": chunk.get("filepath", ""),
@@ -80,10 +80,8 @@ class VectorStore:
                 "chunk_id": chunk.get("chunk_id", 0),
             }
             
-            # 生成唯一 ID
-            doc_id = f"{metadata['filename']}_{metadata['page_number']}_{metadata['chunk_id']}_{i}"
+            doc_id = f"{metadata['filename']}_{metadata['page_number']}_{metadata['chunk_id']}_{i}" # 用于检索
             
-            # 添加到 collection
             self.collection.add(
                 ids=[doc_id],
                 embeddings=[embedding],
@@ -114,7 +112,7 @@ class VectorStore:
             n_results=top_k
         )
         
-        # 格式化返回结果
+        # 格式化结果
         formatted_results = []
         if results and results["documents"] and results["documents"][0]:
             documents = results["documents"][0]
