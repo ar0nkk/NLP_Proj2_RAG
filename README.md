@@ -32,7 +32,7 @@ NLP_Proj2_RAG/
 ## 使用方法
 ### 1. 配置环境
 ```bash
-git clone https://github.com/ar0nkk/NLP_Proj2_RAG.git
+git clone git@github.com:ar0nkk/NLP_Proj2_RAG.git
 cd NLP_Proj2_RAG
 conda create -n nlp python=3.12 -y
 conda activate nlp
