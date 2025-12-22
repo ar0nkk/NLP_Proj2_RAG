@@ -1,6 +1,5 @@
 import re
 from typing import Any, Dict, List, Optional
-
 from rag_agent import RAGAgent
 from config import MODEL_NAME, TOP_K, THRESHOLD
 

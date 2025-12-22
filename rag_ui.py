@@ -21,7 +21,7 @@ def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = TOP_K) -
         if len(snippet) > 180:
             snippet = snippet[:180].rstrip() + "..."
 
-        blocks.append(f"{header}\n> {snippet}" if snippet else header)
+        blocks.append(f"{header}\n\n> {snippet}\n\n" if snippet else header)
 
     return "\n\n".join(blocks)
 
@@ -102,7 +102,7 @@ def launch_gradio_ui(agent, share: bool = False) -> None:
 
         return answer_text
 
-    description = "输入课程问题或练习需求，系统会检索资料并给出引用明确的回答。"
+    description = "输入课程问题或练习需求，系统会检索 data/ 中的资料并给出引用明确的回答。"
 
     CUSTOM_CSS = """
     html, body {height: 100%; margin: 0; overflow: hidden !important;}
@@ -118,10 +118,6 @@ def launch_gradio_ui(agent, share: bool = False) -> None:
             fn=respond,
             title="课程助教 RAG 助手",
             description=description,
-            examples=[
-                "列出课程大纲。",
-                "针对课程知识点生成3道中等难度的选择题。",
-            ],
             chatbot=gr.Chatbot(
                 height=620,
                 render_markdown=True,
