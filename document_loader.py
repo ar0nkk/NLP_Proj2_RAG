@@ -1,6 +1,5 @@
 import os
 from typing import List, Dict, Optional
-
 import docx2txt
 import pdfplumber
 from pptx import Presentation

@@ -5,6 +5,7 @@
 benchmark_data/
 converted_data/
 data/*
+!data/.gitkeep
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
