@@ -3,6 +3,7 @@ import os
 
 from config import VECTOR_DB_PATH, MODEL_NAME
 from exercise_agent import ExerciseAgent
+from rag_agent import RAGAgent
 from rag_ui import launch_gradio_ui, run_cli_session
 
 

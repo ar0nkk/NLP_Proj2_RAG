@@ -2,7 +2,7 @@ from typing import Dict, List
 
 
 # 格式化参考资料为Markdown
-def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = 3) -> str:
+def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = 10) -> str:
     if not retrieved_docs:
         return ""
 
