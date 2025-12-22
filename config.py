@@ -1,5 +1,9 @@
+# modify by yourself
 # API配置
-OPENAI_API_KEY = "sk-0fe3e1a96aee4c228b8eddc74fa70a46"
+import os
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 MODEL_NAME = "qwen3-max"
 OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
@@ -17,4 +21,6 @@ CHUNK_OVERLAP = 50
 MAX_TOKENS = 1000
 
 # RAG配置
-TOP_K = 10
+TOP_K = 5
+THRESHOLD = 1.2
+INTERACTION_MODE = "ui" # 交互方式配置：ui 或 cli

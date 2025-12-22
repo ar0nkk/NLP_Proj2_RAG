@@ -2,7 +2,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from rag_agent import RAGAgent
-from config import MODEL_NAME, TOP_K
+from config import MODEL_NAME, TOP_K, THRESHOLD
 
 
 class ExerciseAgent(RAGAgent):
@@ -187,12 +187,12 @@ class ExerciseAgent(RAGAgent):
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=messages, # type: ignore
                 temperature=0.5,
                 max_tokens=1800,
             )
 
-            return response.choices[0].message.content
+            return response.choices[0].message.content # type: ignore
         except Exception as e:
             return f"生成习题时出错: {str(e)}"
 
@@ -201,10 +201,10 @@ class ExerciseAgent(RAGAgent):
         query: str,
         chat_history: Optional[List[Dict]] = None,
         top_k: int = TOP_K,
+        threshold: float = THRESHOLD,
         return_details: bool = False,
     ) -> Any:
-        # 主接口
-        context, retrieved_docs = self.retrieve_context(query, top_k=top_k)
+        context, retrieved_docs = self.retrieve_context(query, top_k=top_k, threshold=threshold)
 
         if not context:
             context = "（未检索到特别相关的课程材料）"

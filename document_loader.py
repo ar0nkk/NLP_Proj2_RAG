@@ -2,7 +2,7 @@ import os
 from typing import List, Dict, Optional
 
 import docx2txt
-from PyPDF2 import PdfReader
+import pdfplumber
 from pptx import Presentation
 
 from config import DATA_DIR
@@ -26,12 +26,13 @@ class DocumentLoader:
         3. 格式化为"--- 第 X 页 ---\n文本内容\n"
         4. 返回pdf内容列表，每个元素包含 {"text": "..."}
         """
+        # [AI] 查询 PdfReader 文本提取方法函数 extract_text
         pages = []
-        reader = PdfReader(file_path)
-        for page_idx, page in enumerate(reader.pages, 1):
-            text = page.extract_text() or ""
-            formatted_text = f"--- 第 {page_idx} 页 ---\n{text}\n"
-            pages.append({"text": formatted_text})
+        with pdfplumber.open(file_path) as pdf:
+            for page_idx, page in enumerate(pdf.pages, 1): # start from page 1
+                text = page.extract_text() or "" # handle None case
+                formatted_text = f"--- 第 {page_idx} 页 ---\n{text}\n" # for identification
+                pages.append({"text": formatted_text})
         return pages
 
     def load_pptx(self, file_path: str) -> List[Dict]:
@@ -44,13 +45,14 @@ class DocumentLoader:
         3. 格式化为"--- 幻灯片 X ---\n文本内容\n"
         4. 返回幻灯片内容列表，每个元素包含 {"text": "..."}
         """
+        # [AI] 查询 Presentation 文本提取方法
         slides = []
         prs = Presentation(file_path)
         for slide_idx, slide in enumerate(prs.slides, 1):
             texts = []
             for shape in slide.shapes:
                 if shape.has_text_frame:
-                    for paragraph in shape.text_frame.paragraphs:
+                    for paragraph in shape.text_frame.paragraphs: # type: ignore
                         for run in paragraph.runs:
                             texts.append(run.text)
             slide_text = "\n".join(texts)
@@ -65,8 +67,7 @@ class DocumentLoader:
         1. 使用docx2txt读取DOCX文件
         2. 返回文本内容
         """
-        text = docx2txt.process(file_path)
-        return text
+        return docx2txt.process(file_path)
 
     def load_txt(self, file_path: str) -> str:
         """加载TXT文件
@@ -142,7 +143,7 @@ class DocumentLoader:
         """加载数据目录下的所有文档"""
         if not os.path.exists(self.data_dir):
             print(f"数据目录不存在: {self.data_dir}")
-            return None
+            return None # type: ignore
 
         documents = []
 
@@ -154,6 +155,46 @@ class DocumentLoader:
                     print(f"正在加载: {file_path}")
                     doc_chunks = self.load_document(file_path)
                     if doc_chunks:
-                        documents.extend(doc_chunks)
+                        documents.extend(doc_chunks) # 展平列表
 
         return documents
+
+''' documents example:
+[
+    {
+        "content": "--- 第 1 页 ---\n第一页的文本内容\n",
+        "filename": "report.pdf",
+        "filepath": "/data/report.pdf",
+        "filetype": ".pdf",
+        "page_number": 1
+    },
+    {
+        "content": "--- 第 2 页 ---\n第二页的文本内容\n",
+        "filename": "report.pdf",
+        "filepath": "/data/report.pdf",
+        "filetype": ".pdf",
+        "page_number": 2
+    },
+    {
+        "content": "--- 幻灯片 1 ---\n演讲内容\n",
+        "filename": "presentation.pptx",
+        "filepath": "/data/presentation.pptx",
+        "filetype": ".pptx",
+        "page_number": 1
+    },
+    {
+        "content": "整个 Word 文档内容",
+        "filename": "doc.docx",
+        "filepath": "/data/doc.docx",
+        "filetype": ".docx",
+        "page_number": 0
+    },
+    {
+        "content": "纯文本文件内容",
+        "filename": "notes.txt",
+        "filepath": "/data/notes.txt",
+        "filetype": ".txt",
+        "page_number": 0
+    }
+]
+'''

@@ -6,6 +6,11 @@ class TextSplitter:
     def __init__(self, chunk_size: int, chunk_overlap: int):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        # 添加参数检查
+        if chunk_size - chunk_overlap <= 0 or chunk_size <= 0 or chunk_overlap < 0:
+            print("[warning] Invalid chunk_size or chunk_overlap, using default values 500 and 50")
+            self.chunk_size = 500
+            self.chunk_overlap = 50
 
     def split_text(self, text: str) -> List[str]:
         """将文本切分为块
@@ -19,46 +24,24 @@ class TextSplitter:
         """
         if not text:
             return []
-        chunk_size = max(1, self.chunk_size)
-        overlap = max(0, min(self.chunk_overlap, chunk_size - 1))
-        sentence_endings = "。！？.!?"
 
-        chunks: List[str] = []
+        chunks = []
+        step = self.chunk_size - self.chunk_overlap
+        boundaries = ["\n\n", "。", "！", "？", ".", "!", "?"]
         start = 0
         text_len = len(text)
-
         while start < text_len:
-            end = min(start + chunk_size, text_len)
-            adjusted_end = end
-
+            end = min(start + self.chunk_size, text_len)
             window = text[start:end]
-            candidate_positions: List[int] = []  # 用于存储候选切分位置
-
-            # 查找是否有合适句子结束符
-            for symbol in sentence_endings:
-                idx = window.rfind(symbol)
-                if idx != -1:
-                    candidate_positions.append(idx + 1)
-
-            newline_idx = window.rfind("\n\n")
-            if newline_idx != -1:
-                candidate_positions.append(newline_idx + 2)
-
-            if candidate_positions:
-                best = max(candidate_positions)
-                if start + best > start:
-                    adjusted_end = start + best
-
-            chunk = text[start:adjusted_end].strip() # 提取切分后的文本块
-            if chunk:
-                chunks.append(chunk)
-
-            if adjusted_end >= text_len:
-                break
-
-            start = max(0, adjusted_end - overlap)
-            if start >= text_len:
-                break
+            chunk_end = -1
+            for b in boundaries:
+                end_mark = window.rfind(b)  # 从后往前查找，未找到返回-1
+                if end_mark > chunk_end:
+                    chunk_end = end_mark
+            if start + chunk_end > start:
+                end = start + chunk_end + 1 # 包含边界符
+            chunks.append(text[start:end].strip())
+            start += step
 
         return chunks
 

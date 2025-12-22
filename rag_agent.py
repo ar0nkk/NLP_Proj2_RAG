@@ -7,6 +7,7 @@ from config import (
     OPENAI_API_BASE,
     MODEL_NAME,
     TOP_K,
+    THRESHOLD,
 )
 from vector_store import VectorStore
 
@@ -41,7 +42,7 @@ class RAGAgent:
     - 严禁编造资料；当上下文不足时要说明"""
 
     def retrieve_context(
-        self, query: str, top_k: int = TOP_K
+        self, query: str, top_k: int = TOP_K, threshold: float = THRESHOLD
     ) -> Tuple[str, List[Dict]]:
         """检索相关上下文
         TODO: 实现检索相关上下文
@@ -51,8 +52,8 @@ class RAGAgent:
         3. 每个检索结果需要包含来源信息（文件名和页码）
         4. 返回格式化的上下文字符串和原始检索结果列表
         """
-        # 使用向量数据库检索相关文档
-        retrieved_docs = self.vector_store.search(query, top_k=top_k)
+        # 使用向量数据库检索相关文档，过滤掉相关性较低的内容
+        retrieved_docs = self.vector_store.search(query, top_k=top_k, threshold=threshold)
 
         if not retrieved_docs:
             placeholder = "（未检索到与该问题直接相关的课程材料）"
@@ -67,14 +68,16 @@ class RAGAgent:
             metadata = doc.get("metadata", {})
             filename = metadata.get("filename", "未知文件")
             page_number = metadata.get("page_number", 0)
+            dist = doc.get("score", None) # Chroma 距离，越小越相似
             
             # 构建带来源信息的上下文片段
             if page_number > 0:
                 source_info = f"[来源：{filename}, 第{page_number}页]"
             else:
                 source_info = f"[来源：{filename}]"
-            
-            context_parts.append(f"--- 参考资料 {i} {source_info} ---\n{content}\n")
+
+            dist_info = f" (distance: {dist:.4f})" if dist is not None else ""
+            context_parts.append(f"--- 参考资料 {i} {source_info}{dist_info} ---\n{content}\n")
         
         context_str = "\n".join(context_parts)
         return context_str, retrieved_docs
@@ -84,7 +87,7 @@ class RAGAgent:
         query: str,
         context: str,
         chat_history: Optional[List[Dict]] = None,
-    ) -> str:
+    ) -> str | None:
         """生成回答
 
         参数:
@@ -130,7 +133,7 @@ class RAGAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model=self.model, messages=messages, temperature=0.7, max_tokens=1500
+                model=self.model, messages=messages, temperature=0.7, max_tokens=1500 # type: ignore
             )
 
             return response.choices[0].message.content
@@ -143,6 +146,7 @@ class RAGAgent:
         query: str,
         chat_history: Optional[List[Dict]] = None,
         top_k: int = TOP_K,
+        threshold: float = THRESHOLD,
         return_details: bool = False,
     ) -> Any:
         """回答问题
@@ -155,7 +159,7 @@ class RAGAgent:
         返回:
             生成的回答
         """
-        context, retrieved_docs = self.retrieve_context(query, top_k=top_k)
+        context, retrieved_docs = self.retrieve_context(query, top_k=top_k, threshold=threshold)
 
         if not context:
             context = "（未检索到特别相关的课程材料）"
