@@ -22,5 +22,5 @@ MAX_TOKENS = 1000
 
 # RAG配置
 TOP_K = 5
-THRESHOLD = 1.5
+THRESHOLD = 1.2
 INTERACTION_MODE = "ui" # 交互方式配置：ui 或 cli

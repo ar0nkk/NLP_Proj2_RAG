@@ -49,7 +49,7 @@ def _convert_history(history: List) -> List[Dict[str, str]]:
 def run_cli_session(agent) -> None:
     print("=" * 60)
     print("欢迎使用RAG智能课程助教系统！")
-    print("提示：输入诸如“出3道中等难度选择题巩固HMM”自动生成习题。")
+    print("提示：输入诸如“出3道中等难度选择题巩固……知识点”自动生成习题。")
     print("=" * 60)
 
     chat_history: List[Dict[str, str | None]] = []
@@ -120,7 +120,7 @@ def launch_gradio_ui(agent, share: bool = False) -> None:
             description=description,
             examples=[
                 "列出课程大纲。",
-                "针对课程资料生成3道中等难度的选择题。",
+                "针对课程知识点生成3道中等难度的选择题。",
             ],
             chatbot=gr.Chatbot(
                 height=620,
