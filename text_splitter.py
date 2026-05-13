@@ -38,7 +38,7 @@ class TextSplitter:
                 end_mark = window.rfind(b)  # 从后往前查找，未找到返回-1
                 if end_mark > chunk_end:
                     chunk_end = end_mark
-            if start + chunk_end > start:
+            if chunk_end > 0:
                 end = start + chunk_end + 1 # 包含边界符
             chunks.append(text[start:end].strip())
             start += step
