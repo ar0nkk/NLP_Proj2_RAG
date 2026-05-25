@@ -1,6 +1,18 @@
+import os
+import socket
 from typing import Dict, List
 import gradio as gr
 from config import TOP_K, THRESHOLD
+
+
+def _pick_server_port() -> int:
+    configured_port = os.getenv("GRADIO_SERVER_PORT")
+    if configured_port:
+        return int(configured_port)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 # 格式化参考资料为Markdown
 def _format_reference_markdown(retrieved_docs: List[Dict], limit: int = TOP_K) -> str:
@@ -133,4 +145,5 @@ def launch_gradio_ui(agent, share: bool = False) -> None:
         )
 
     demo.queue()
-    demo.launch(share=share, inbrowser=True)
+    server_port = _pick_server_port()
+    demo.launch(share=share, inbrowser=True, server_port=server_port)

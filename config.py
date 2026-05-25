@@ -1,19 +1,21 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # API配置
 # 你需要在根目录创建一个 .env 文件，写上 OPENAI_API_KEY="你的密钥"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-MODEL_NAME = "deepseek-v3.2-exp"
+MODEL_NAME = "qwen3.7-max"
 OPENAI_EMBEDDING_MODEL = "text-embedding-v4"
 
 # 数据目录配置
-DATA_DIR = "data/"
+DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # 向量数据库配置
-VECTOR_DB_PATH = "./vector_db"
+VECTOR_DB_PATH = os.path.join(BASE_DIR, "vector_db")
 COLLECTION_NAME = "try"
 
 # 文本处理配置
