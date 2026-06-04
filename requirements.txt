@@ -15,4 +15,4 @@ pillow>=9.0.0
 pytesseract>=0.3.10
 matplotlib>=3.5.0
 gradio>=4.0.0
-
+packaging>=23.2,<26.0.0
